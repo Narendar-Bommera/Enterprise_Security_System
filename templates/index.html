@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Enterprise Security System</title>
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    margin: 0;
+}
+
+/* Header */
+header {
+    background: #020617;
+    padding: 20px;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    border-bottom: 2px solid #38bdf8;
+}
+
+/* Container */
+.container {
+    width: 90%;
+    margin: auto;
+    margin-top: 40px;
+    display: flex;
+    gap: 20px;
+}
+
+/* Card */
+.card {
+    background: #111827;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    flex: 1;
+}
+
+/* Headings */
+.card h2 {
+    margin-top: 0;
+    color: #38bdf8;
+    border-bottom: 1px solid #38bdf8;
+    padding-bottom: 5px;
+}
+
+/* Inputs */
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 6px;
+    border: none;
+    background: #1e293b;
+    color: white;
+}
+
+/* Scan Button (centered below cards) */
+#startBtn {
+    display: block;
+    margin: 20px auto;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    background: #2563eb;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    width: 200px;
+}
+
+#startBtn:hover {
+    background: #1d4ed8;
+    box-shadow: 0 0 10px #3b82f6;
+}
+
+/* Results */
+.results {
+    margin-top: 25px;
+}
+
+/* Critical vulnerability alert */
+.stat {
+    display: inline-block;
+    background: #dc2626;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-size: 18px;
+}
+
+/* Download buttons */
+.download {
+    margin-top: 20px;
+}
+.download button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    background: #2563eb;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+.download button:hover {
+    background: #1d4ed8;
+    box-shadow: 0 0 10px #3b82f6;
+}
+
+/* Responsive for small screens */
+@media screen and (max-width: 900px) {
+    .container {
+        flex-direction: column;
+    }
+}
+</style>
+</head>
+<body>
+
+<header>🛡 Welcome to Security World 🛡</header>
+
+<div class="container">
+    <!-- Network Details -->
+    <div class="card">
+        <h2>Network IP Address</h2>
+        <input id="ip" placeholder="Enter Target IP Address">
+    </div>
+
+    <!-- Owner Details -->
+    <div class="card">
+        <h2>Host Details</h2>
+        <input id="owner" placeholder="Enter Host Name">
+        <input id="phone" placeholder="Host Phone Number">
+    </div>
+</div>
+
+<!-- Centered Start Scan Button -->
+<button id="startBtn" onclick="startScan()">Start Scanning</button>
+
+<!-- Results -->
+<div class="container" style="margin-top:30px;">
+    <div class="card" style="flex: 1 1 100%;">
+        <h2>Scanned IP Results</h2>
+        <div class="results">
+            <h3 id="status"></h3>
+            <div id="criticalBox"></div>
+            <div class="download">
+                <a id="pdfLink"><button>Download PDF Report</button></a>
+                <a href="/download_excel"><button>Download Excel Report</button></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function startScan(){
+    let ip = document.getElementById("ip").value.trim();
+    let owner = document.getElementById("owner").value.trim();
+    let phone = document.getElementById("phone").value.trim();
+
+    // Validation
+    if(ip === ""){
+        alert("Please enter a Target IP Address");
+        return;
+    }
+    if(owner === ""){
+        alert("Please enter the Owner Name");
+        return;
+    }
+    if(phone === ""){
+        alert("Please enter the Phone Number");
+        return;
+    }
+
+    document.getElementById("status").innerHTML = "Scanning...";
+
+    fetch("/scan", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ip: ip, owner: owner, phone: phone})
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("status").innerHTML = "Scan Completed";
+
+        const criticalBox = document.getElementById("criticalBox");
+
+        // Show critical only if detected
+        if(data.critical > 0){
+            criticalBox.innerHTML =
+                '<div class="stat">Critical Vulnerabilities: ' + data.critical + '</div>';
+        } else {
+            criticalBox.innerHTML = "";  // hide if zero
+        }
+
+        document.getElementById("pdfLink").href = "/download_pdf/" + ip;
+
+        // Clear owner and phone fields after scan
+        document.getElementById("owner").value = "";
+        document.getElementById("phone").value = "";
+    })
+    .catch(err => {
+        document.getElementById("status").innerHTML = "Scan Failed!";
+        console.error(err);
+    });
+}
+</script>
+</body>
+</html>
